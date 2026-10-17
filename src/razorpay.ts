@@ -3,9 +3,13 @@ import Razorpay from "razorpay";
 import type {
   CreateRazorpayOrderInput,
   RazorpayOrderResponse,
+  RazorpayOrderListResponse,
   RazorpayPaymentResponse,
-  RazorpayRefundResponse,
+  RazorpayPaymentListResponse,
+  RazorpayPaymentListForOrderResponse,
   RazorpayPluginOptions,
+  RazorpayRefundResponse,
+  RazorpayRefundListResponse,
 } from "./types.js";
 
 type RazorpayOrderCreateRequestBody = {
@@ -179,3 +183,60 @@ export const serializeRazorpayRefund = (
   speedRequested: refund.speed_requested ?? null,
   speedProcessed: refund.speed_processed ?? null,
 });
+
+// ─── List Serializers ────────────────────────────────────────────────────────
+
+export const serializeRazorpayPaymentList = (list: {
+  entity: string;
+  count: number;
+  items: RazorpayPayment[];
+}): RazorpayPaymentListResponse => ({
+  entity: list.entity,
+  count: list.count,
+  items: list.items.map(serializeRazorpayPayment),
+});
+
+export const serializeRazorpayRefundList = (list: {
+  entity: string;
+  count: number;
+  items: RazorpayRefund[];
+}): RazorpayRefundListResponse => ({
+  entity: list.entity,
+  count: list.count,
+  items: list.items.map((r) => ({
+    id: r.id,
+    entity: r.entity,
+    amount: r.amount ?? null,
+    currency: r.currency,
+    paymentId: r.payment_id,
+    receipt: r.receipt ?? null,
+    status: r.status,
+    notes: r.notes ?? {},
+    createdAt: r.created_at,
+    speedRequested: r.speed_requested ?? null,
+    speedProcessed: r.speed_processed ?? null,
+  })),
+});
+
+export const serializeRazorpayOrderList = (list: {
+  entity: string;
+  count: number;
+  items: RazorpayOrder[];
+}): RazorpayOrderListResponse => ({
+  entity: list.entity,
+  count: list.count,
+  items: list.items.map(serializeRazorpayOrder),
+});
+
+export const serializeRazorpayPaymentListForOrder = (list: {
+  entity: string;
+  count: number;
+  items: RazorpayPayment[];
+}): RazorpayPaymentListForOrderResponse => ({
+  entity: list.entity,
+  count: list.count,
+  items: list.items.map(serializeRazorpayPayment),
+});
+
+export const serializeRazorpayRefundSingle = (refund: RazorpayRefund): RazorpayRefundResponse =>
+  serializeRazorpayRefund(refund);

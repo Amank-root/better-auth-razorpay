@@ -246,10 +246,171 @@ export interface RazorpayWebhookEvent {
       entity: RazorpaySubscriptionEntity;
     };
     payment?: {
-      entity: Record<string, unknown>;
+      entity: RazorpayPaymentEntity;
+    };
+    refund?: {
+      entity: RazorpayRefundEntity;
+    };
+    invoice?: {
+      entity: RazorpayInvoiceEntity;
+    };
+    order?: {
+      entity: RazorpayOrderEntity;
+    };
+    dispute?: {
+      entity: RazorpayDisputeEntity;
     };
   };
   created_at: number;
+}
+
+/**
+ * Razorpay Payment entity (from webhooks / payments API)
+ */
+export interface RazorpayPaymentEntity {
+  id: string;
+  entity: string;
+  amount: number | string;
+  currency: string;
+  status: string;
+  order_id?: string | null;
+  invoice_id?: string | null;
+  method: string;
+  captured: boolean;
+  amount_refunded?: number;
+  refund_status?: string | null;
+  email?: string | null;
+  contact?: string | number | null;
+  notes?: Record<string, string | number | null>;
+  error_code?: string | null;
+  error_description?: string | null;
+  created_at: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Razorpay Refund entity (from refunds API and webhooks)
+ */
+export interface RazorpayRefundEntity {
+  id: string;
+  entity: string;
+  amount?: number | null;
+  currency: string;
+  payment_id: string;
+  receipt?: string | null;
+  status: string;
+  notes?: Record<string, string | number | null>;
+  created_at: number;
+  speed_requested?: string | null;
+  speed_processed?: string | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Razorpay Invoice entity (from invoices API and webhooks)
+ */
+export interface RazorpayInvoiceEntity {
+  id: string;
+  entity: string;
+  invoice_number: string;
+  customer_details?: Record<string, unknown> | null;
+  line_items?: Record<string, unknown>[];
+  payment_id?: string | null;
+  issued_at?: number | null;
+  paid_at?: number | null;
+  cancelled_at?: number | null;
+  expired_at?: number | null;
+  sms_status?: "pending" | "sent" | null;
+  email_status?: "pending" | "sent" | null;
+  gross_amount?: number;
+  tax_amount?: number;
+  taxable_amount?: number;
+  status?:
+    | "draft"
+    | "issued"
+    | "partially_paid"
+    | "paid"
+    | "cancelled"
+    | "expired"
+    | "deleted";
+  amount_paid?: number;
+  amount_due?: number;
+  short_url?: string | null;
+  currency_symbol?: string | null;
+  created_at: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Razorpay Order entity (from orders API and webhooks)
+ */
+export interface RazorpayOrderEntity {
+  id: string;
+  entity: string;
+  amount: number | string;
+  amount_paid: number;
+  amount_due: number;
+  currency: string;
+  receipt?: string | null;
+  status: string;
+  attempts: number;
+  notes?: Record<string, string | number | null>;
+  created_at: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Razorpay Dispute entity (from webhooks)
+ */
+export interface RazorpayDisputeEntity {
+  id: string;
+  entity: string;
+  payment_id: string;
+  payment_order_id: string;
+  amount: number;
+  currency: string;
+  amount_due: number;
+  status: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Razorpay Item entity (from items API)
+ */
+export interface RazorpayItemEntity {
+  id: string;
+  entity: string;
+  name: string;
+  amount: number | string;
+  currency: string;
+  description?: string | null;
+  unit_amount: number;
+  type: string;
+  unit: number | null;
+  tax_inclusive: boolean;
+  hsn_code: number | null;
+  sac_code: number | null;
+  tax_rate: number | null;
+  tax_id: string | null;
+  tax_group_id: string | null;
+  created_at: number;
+  updated_at: number;
+  active: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Razorpay Add-on entity (from add-ons API)
+ */
+export interface RazorpayAddonEntity {
+  id: string;
+  entity: string;
+  item: RazorpayItemEntity;
+  quantity: number;
+  created_at: number;
+  subscription_id: string;
+  invoice_id: string;
+  [key: string]: unknown;
 }
 
 /**
@@ -569,6 +730,78 @@ export interface RazorpayOptions {
    */
   onEvent?: ((event: RazorpayWebhookEvent) => Promise<void>) | undefined;
   /**
+   * Payment webhook callbacks
+   */
+  onPaymentAuthorized?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        payment: RazorpayPaymentEntity;
+      }) => Promise<void>)
+    | undefined;
+  onPaymentCaptured?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        payment: RazorpayPaymentEntity;
+      }) => Promise<void>)
+    | undefined;
+  onPaymentFailed?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        payment: RazorpayPaymentEntity;
+      }) => Promise<void>)
+    | undefined;
+  /**
+   * Order webhook callbacks
+   */
+  onOrderPaid?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        order: RazorpayOrderEntity;
+      }) => Promise<void>)
+    | undefined;
+  /**
+   * Refund webhook callbacks
+   */
+  onRefundCreated?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        refund: RazorpayRefundEntity;
+      }) => Promise<void>)
+    | undefined;
+  onRefundProcessed?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        refund: RazorpayRefundEntity;
+      }) => Promise<void>)
+    | undefined;
+  onRefundFailed?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        refund: RazorpayRefundEntity;
+      }) => Promise<void>)
+    | undefined;
+  /**
+   * Invoice webhook callbacks
+   */
+  onInvoicePaid?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        invoice: RazorpayInvoiceEntity;
+      }) => Promise<void>)
+    | undefined;
+  onInvoicePartiallyPaid?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        invoice: RazorpayInvoiceEntity;
+      }) => Promise<void>)
+    | undefined;
+  onInvoiceExpired?:
+    | ((data: {
+        event: RazorpayWebhookEvent;
+        invoice: RazorpayInvoiceEntity;
+      }) => Promise<void>)
+    | undefined;
+  /**
    * Schema for the razorpay plugin
    */
   schema?:
@@ -661,4 +894,340 @@ export type RazorpayRefundResponse = {
 
 export type VerifyRazorpayPaymentResponse = {
   valid: boolean;
+};
+
+// ─── Pagination ─────────────────────────────────────────────────────────────
+
+export type RazorpayPaginationQuery = {
+  from?: number | undefined;
+  to?: number | undefined;
+  count?: number | undefined;
+  skip?: number | undefined;
+};
+
+// ─── Payments: Fetch All ────────────────────────────────────────────────────
+
+export type FetchAllPaymentsQuery = RazorpayPaginationQuery & {
+  expand?: string | undefined;
+  referenceId?: string | undefined;
+  transfer?: boolean | undefined;
+};
+
+export type RazorpayPaymentListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayPaymentResponse[];
+};
+
+// ─── Payments: Edit Notes ───────────────────────────────────────────────────
+
+export type EditPaymentBody = {
+  paymentId: string;
+  notes: RazorpayNotes;
+};
+
+// ─── Refunds ────────────────────────────────────────────────────────────────
+
+export type FetchRefundQuery = {
+  refundId: string;
+  paymentId?: string | undefined;
+};
+
+export type FetchAllRefundsQuery = RazorpayPaginationQuery;
+
+export type EditRefundBody = {
+  refundId: string;
+  notes: RazorpayNotes;
+};
+
+export type RazorpayRefundSingleResponse = RazorpayRefundEntity;
+
+export type RazorpayRefundListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayRefundResponse[];
+};
+
+// ─── Invoices ───────────────────────────────────────────────────────────────
+
+export type RazorpayInvoiceLineItemIdBody = {
+  id?: string | undefined;
+  item_id?: string | undefined;
+  quantity?: number | undefined;
+  amount?: number | string | undefined;
+  gross_amount?: number | undefined;
+  tax_amount?: number | undefined;
+  taxable_amount?: number | undefined;
+  net_amount?: number | undefined;
+  type?: string | undefined;
+  sku?: string | undefined;
+  variant_id?: string | undefined;
+  price?: string | undefined;
+  offer_price?: string | undefined;
+  tax_amount_value?: number | undefined;
+  name?: string | undefined;
+  description?: string | undefined;
+  weight?: string | undefined;
+  dimensions?: Record<string, unknown> | undefined;
+  image_url?: string | undefined;
+  product_url?: string | undefined;
+  notes?: RazorpayNotes | undefined;
+};
+
+export type RazorpayInvoiceAddressBody = {
+  line1: string;
+  line2?: string | undefined;
+  zipcode: string | number;
+  city: string;
+  state?: string | undefined;
+  country: string;
+};
+
+export type CreateInvoiceBody = {
+  type?: "invoice" | "link" | undefined;
+  description?: string | null | undefined;
+  date?: number | null | undefined;
+  customer_id?: string | undefined;
+  currency?: string | undefined;
+  customer?: {
+    name?: string | null | undefined;
+    email?: string | null | undefined;
+    contact?: string | number | null | undefined;
+    billing_address?: RazorpayInvoiceAddressBody | undefined;
+    shipping_address?: RazorpayInvoiceAddressBody | undefined;
+  } | null | undefined;
+  order_id?: string | undefined;
+  line_items: RazorpayInvoiceLineItemIdBody[];
+  expire_by?: number | null | undefined;
+  sms_notify?: boolean | 0 | 1 | undefined;
+  email_notify?: boolean | 0 | 1 | undefined;
+  partial_payment?: boolean | 0 | 1 | undefined;
+  notes?: RazorpayNotes | undefined;
+  receipt?: string | null | undefined;
+  amount?: number | string | undefined;
+};
+
+export type FetchInvoiceQuery = {
+  invoiceId: string;
+};
+
+export type EditInvoiceBody = {
+  invoiceId: string;
+  notes?: RazorpayNotes | undefined;
+  customer_details?: Record<string, unknown> | undefined;
+  line_items?: RazorpayInvoiceLineItemIdBody[] | undefined;
+  expire_by?: number | null | undefined;
+  sms_notify?: boolean | 0 | 1 | undefined;
+  email_notify?: boolean | 0 | 1 | undefined;
+  partial_payment?: boolean | 0 | 1 | undefined;
+  receipt?: string | null | undefined;
+};
+
+export type FetchAllInvoicesQuery = RazorpayPaginationQuery & {
+  type?: string | undefined;
+  payment_id?: string | undefined;
+  receipt?: string | undefined;
+  customer_id?: string | undefined;
+  subscription_id?: string | undefined;
+};
+
+export type IssueInvoiceQuery = {
+  invoiceId: string;
+};
+
+export type DeleteInvoiceQuery = {
+  invoiceId: string;
+};
+
+export type CancelInvoiceQuery = {
+  invoiceId: string;
+};
+
+export type NotifyByInvoiceBody = {
+  invoiceId: string;
+  medium: "email" | "sms";
+};
+
+export type RazorpayInvoiceResponse = RazorpayInvoiceEntity;
+
+export type RazorpayInvoiceListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayInvoiceEntity[];
+};
+
+// ─── Orders ─────────────────────────────────────────────────────────────────
+
+export type EditOrderBody = {
+  orderId: string;
+  notes: RazorpayNotes;
+};
+
+export type FetchPaymentsForOrderQuery = {
+  orderId: string;
+};
+
+export type FetchAllOrdersQuery = RazorpayPaginationQuery & {
+  authorized?: boolean | undefined;
+  receipt?: string | undefined;
+  expand?: string | undefined;
+};
+
+export type RazorpayOrderListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayOrderResponse[];
+};
+
+export type RazorpayPaymentListForOrderResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayPaymentResponse[];
+};
+
+// ─── Customers: Bank Accounts ───────────────────────────────────────────────
+
+export type AddBankAccountBody = {
+  customerId: string;
+  ifsc_code: string;
+  account_number: string;
+  beneficiary_name?: string | undefined;
+};
+
+export type DeleteBankAccountQuery = {
+  customerId: string;
+  bankAccountId: string;
+};
+
+export type RazorpayBankAccountResponse = {
+  id: string;
+  entity: string;
+  ifsc: string;
+  bank_account: {
+    ifsc: string;
+    bank: string;
+    account_number: string;
+    account_type: "savings" | "current";
+  };
+  created_at: number;
+  [key: string]: unknown;
+};
+
+// ─── Customers: Tokens ─────────────────────────────────────────────────────
+
+export type FetchTokensQuery = {
+  customerId: string;
+};
+
+export type FetchTokenQuery = {
+  customerId: string;
+  tokenId: string;
+};
+
+export type DeleteTokenQuery = {
+  customerId: string;
+  tokenId: string;
+};
+
+export type RazorpayTokenListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayTokenEntity[];
+};
+
+export type RazorpayTokenEntity = {
+  id: string;
+  entity: string;
+  token: string;
+  bank: string | null;
+  wallet: string | null;
+  method: string;
+  recurring: boolean;
+  created_at: number;
+  [key: string]: unknown;
+};
+
+export type RazorpayTokenDeleteResponse = {
+  deleted: boolean;
+};
+
+// ─── Add-ons (standalone) ──────────────────────────────────────────────────
+
+export type FetchAddonQuery = {
+  addonId: string;
+};
+
+export type DeleteAddonQuery = {
+  addonId: string;
+};
+
+export type FetchAllAddonsQuery = RazorpayPaginationQuery;
+
+export type RazorpayAddonResponse = RazorpayAddonEntity;
+
+export type RazorpayAddonListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayAddonEntity[];
+};
+
+// ─── Items ──────────────────────────────────────────────────────────────────
+
+export type CreateItemBody = {
+  name: string;
+  amount: number | string;
+  currency: string;
+  description?: string | undefined;
+  active?: boolean | undefined;
+  tax_inclusive?: boolean | undefined;
+  hsn_code?: number | undefined;
+  sac_code?: number | undefined;
+  tax_rate?: number | undefined;
+  tax_id?: string | undefined;
+  tax_group_id?: string | undefined;
+};
+
+export type FetchItemQuery = {
+  itemId: string;
+};
+
+export type EditItemBody = {
+  itemId: string;
+  name?: string | undefined;
+  amount?: number | string | undefined;
+  currency?: string | undefined;
+  description?: string | undefined;
+  active?: boolean | undefined;
+  tax_inclusive?: boolean | undefined;
+  hsn_code?: number | undefined;
+  sac_code?: number | undefined;
+  tax_rate?: number | undefined;
+  tax_id?: string | undefined;
+  tax_group_id?: string | undefined;
+};
+
+export type DeleteItemQuery = {
+  itemId: string;
+};
+
+export type FetchAllItemsQuery = RazorpayPaginationQuery & {
+  active?: number | undefined;
+};
+
+export type RazorpayItemResponse = RazorpayItemEntity;
+
+export type RazorpayItemListResponse = {
+  entity: string;
+  count: number;
+  items: RazorpayItemEntity[];
+};
+
+// ─── Subscriptions: Create Add-on ───────────────────────────────────────────
+
+export type CreateSubscriptionAddonBody = {
+  subscriptionId: string;
+  item:
+    | { id: string }
+    | { name: string; amount: number; currency: string; description?: string };
+  quantity?: number | undefined;
 };
