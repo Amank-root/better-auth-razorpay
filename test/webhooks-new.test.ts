@@ -105,6 +105,7 @@ function makeInvoiceEntity(
   return {
     id: "inv_123",
     entity: "invoice",
+    invoice_number: "inv_001",
     status: "paid",
     amount: 50000,
     amount_paid: 50000,
@@ -112,7 +113,7 @@ function makeInvoiceEntity(
     currency: "INR",
     created_at: 1700000000,
     ...overrides,
-  };
+  } as RazorpayInvoiceEntity;
 }
 
 function makePaymentWebhook(
@@ -599,10 +600,10 @@ describe("List serializers", () => {
     expect(result.entity).toBe("list");
     expect(result.count).toBe(2);
     expect(result.items).toHaveLength(2);
-    expect(result.items[0].id).toBe("pay_001");
-    expect(result.items[0].amount).toBe(50000);
-    expect(result.items[1].id).toBe("pay_002");
-    expect(result.items[1].amount).toBe(25000);
+    expect(result.items[0]!.id).toBe("pay_001");
+    expect(result.items[0]!.amount).toBe(50000);
+    expect(result.items[1]!.id).toBe("pay_002");
+    expect(result.items[1]!.amount).toBe(25000);
   });
 
   it("serializes refund list into response shape", () => {
@@ -620,10 +621,10 @@ describe("List serializers", () => {
     expect(result.entity).toBe("list");
     expect(result.count).toBe(2);
     expect(result.items).toHaveLength(2);
-    expect(result.items[0].id).toBe("rfnd_001");
-    expect(result.items[0].paymentId).toBe("pay_123");
-    expect(result.items[1].id).toBe("rfnd_002");
-    expect(result.items[1].amount).toBe(5000);
+    expect(result.items[0]!.id).toBe("rfnd_001");
+    expect(result.items[0]!.paymentId).toBe("pay_123");
+    expect(result.items[1]!.id).toBe("rfnd_002");
+    expect(result.items[1]!.amount).toBe(5000);
   });
 
   it("serializes order list into response shape", () => {
@@ -639,8 +640,8 @@ describe("List serializers", () => {
 
     expect(result.entity).toBe("list");
     expect(result.count).toBe(1);
-    expect(result.items[0].id).toBe("order_001");
-    expect(result.items[0].amount).toBe(50000);
+    expect(result.items[0]!.id).toBe("order_001");
+    expect(result.items[0]!.amount).toBe(50000);
   });
 
   it("serializes payment list for order into response shape", () => {
@@ -653,7 +654,7 @@ describe("List serializers", () => {
     const result = serializeRazorpayPaymentListForOrder(list);
 
     expect(result.count).toBe(1);
-    expect(result.items[0].id).toBe("pay_001");
+    expect(result.items[0]!.id).toBe("pay_001");
   });
 
   it("serializeRazorpayRefundSingle delegates to serializeRazorpayRefund", () => {
@@ -664,7 +665,7 @@ describe("List serializers", () => {
 
     expect(single).toEqual(direct);
     expect(single.id).toBe("rfnd_123");
-    expect(single.paymentId).toBe("pay_123");
+    expect(single!.paymentId).toBe("pay_123");
   });
 
   it("handles empty items array in list serializers", () => {
