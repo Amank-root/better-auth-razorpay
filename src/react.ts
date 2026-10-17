@@ -42,14 +42,68 @@ type RazorpayAuthClient = {
     get: (query: any) => Promise<any>;
   };
   razorpay: {
+    order: {
+      create: (body: any) => Promise<any>;
+      get: (query: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      payments: (query: any) => Promise<any>;
+    };
+    payment: {
+      get: (query: any) => Promise<any>;
+      capture: (body: any) => Promise<any>;
+      refund: (body: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+    };
+    refund: {
+      get: (query: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+    };
+    invoice: {
+      create: (body: any) => Promise<any>;
+      get: (query: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      issue: (body: any) => Promise<any>;
+      delete: (body: any) => Promise<any>;
+      cancel: (body: any) => Promise<any>;
+      notify: (body: any) => Promise<any>;
+    };
     subscription: {
       get: (query: any) => Promise<any>;
       invoices: (query: any) => Promise<any>;
       pendingUpdate: (query: any) => Promise<any>;
+      addon: (body: any) => Promise<any>;
     };
     plan: {
+      create: (body: any) => Promise<any>;
       list: (query?: any) => Promise<any>;
       get: (query: any) => Promise<any>;
+    };
+    customer: {
+      create: (body: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      get: (query: any) => Promise<any>;
+      bankAccount: (body: any) => Promise<any>;
+      bankAccountDelete: (body: any) => Promise<any>;
+      tokens: (query: any) => Promise<any>;
+      token: (query: any) => Promise<any>;
+      tokenDelete: (body: any) => Promise<any>;
+    };
+    addon: {
+      get: (query: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      delete: (body: any) => Promise<any>;
+    };
+    item: {
+      create: (body: any) => Promise<any>;
+      get: (query: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+      delete: (body: any) => Promise<any>;
     };
   };
 };
@@ -73,7 +127,7 @@ export const razorpayQueryKeys = {
       "razorpay",
       subscriptionId,
     ] as const,
-  invoices: (subscriptionId: string) =>
+  subscriptionInvoices: (subscriptionId: string) =>
     [...razorpayQueryKeys.subscriptions(), "invoices", subscriptionId] as const,
   pendingUpdate: (subscriptionId: string) =>
     [
@@ -84,6 +138,29 @@ export const razorpayQueryKeys = {
   plans: () => [...razorpayQueryKeys.all, "plans"] as const,
   plan: (planId: string) =>
     [...razorpayQueryKeys.plans(), "detail", planId] as const,
+  payments: () => [...razorpayQueryKeys.all, "payments"] as const,
+  payment: (paymentId: string) =>
+    [...razorpayQueryKeys.payments(), "detail", paymentId] as const,
+  refunds: () => [...razorpayQueryKeys.all, "refunds"] as const,
+  refund: (refundId: string) =>
+    [...razorpayQueryKeys.refunds(), "detail", refundId] as const,
+  orders: () => [...razorpayQueryKeys.all, "orders"] as const,
+  invoices: () => [...razorpayQueryKeys.all, "invoices"] as const,
+  invoice: (invoiceId: string) =>
+    [...razorpayQueryKeys.invoices(), "detail", invoiceId] as const,
+  addons: () => [...razorpayQueryKeys.all, "addons"] as const,
+  addon: (addonId: string) =>
+    [...razorpayQueryKeys.addons(), "detail", addonId] as const,
+  items: () => [...razorpayQueryKeys.all, "items"] as const,
+  item: (itemId: string) =>
+    [...razorpayQueryKeys.items(), "detail", itemId] as const,
+  customers: () => [...razorpayQueryKeys.all, "customers"] as const,
+  customer: (customerId: string) =>
+    [...razorpayQueryKeys.customers(), "detail", customerId] as const,
+  tokens: (customerId: string) =>
+    [...razorpayQueryKeys.customers(), "tokens", customerId] as const,
+  bankAccounts: (customerId: string) =>
+    [...razorpayQueryKeys.customers(), "bankAccounts", customerId] as const,
 };
 
 // ─── Query Hooks ─────────────────────────────────────────────────────────────
@@ -188,7 +265,7 @@ export function useRazorpayInvoices(
   },
 ) {
   return useQuery<unknown[], Error>({
-    queryKey: razorpayQueryKeys.invoices(subscriptionId),
+    queryKey: razorpayQueryKeys.subscriptionInvoices(subscriptionId),
     queryFn: async () => {
       const { data, error } = await authClient.razorpay.subscription.invoices({
         query: { subscriptionId },
@@ -288,11 +365,507 @@ export function useSubscriptionPendingUpdate(
   });
 }
 
+// ─── Payment Query Hooks ─────────────────────────────────────────────────────
+
+/**
+ * Fetch all payments from Razorpay with optional filters and pagination.
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading } = useRazorpayPaymentList(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpayPaymentList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+    expand?: string;
+    referenceId?: string;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.payments(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.payment.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch a single Razorpay payment by ID.
+ *
+ * @example
+ * ```tsx
+ * const { data: payment } = useRazorpayPayment(authClient, "pay_123");
+ * ```
+ */
+export function useRazorpayPayment(
+  authClient: RazorpayAuthClient,
+  paymentId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.payment(paymentId),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.payment.get({
+        query: { id: paymentId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!paymentId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Refund Query Hooks ──────────────────────────────────────────────────────
+
+/**
+ * Fetch all refunds from Razorpay with pagination.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayRefundList(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpayRefundList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.refunds(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.refund.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch a single refund by ID.
+ *
+ * @example
+ * ```tsx
+ * const { data: refund } = useRazorpayRefund(authClient, "rfnd_123");
+ * ```
+ */
+export function useRazorpayRefund(
+  authClient: RazorpayAuthClient,
+  refundId: string,
+  query?: { paymentId?: string },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.refund(refundId), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.refund.get({
+        query: { refundId, ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!refundId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Invoice Query Hooks ─────────────────────────────────────────────────────
+
+/**
+ * Fetch all invoices from Razorpay with optional filters and pagination.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayInvoiceList(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpayInvoiceList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+    customer_id?: string;
+    subscription_id?: string;
+    payment_id?: string;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.invoices(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.invoice.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch a single invoice by ID.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayInvoice(authClient, "inv_123");
+ * ```
+ */
+export function useRazorpayInvoice(
+  authClient: RazorpayAuthClient,
+  invoiceId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.invoice(invoiceId),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.invoice.get({
+        query: { invoiceId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!invoiceId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Order Query Hooks ───────────────────────────────────────────────────────
+
+/**
+ * Fetch all orders from Razorpay with pagination and optional filters.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayOrderList(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpayOrderList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+    authorized?: boolean;
+    receipt?: string;
+    expand?: string;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.orders(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.order.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch all payments for a given order.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayOrderPayments(authClient, "order_123");
+ * ```
+ */
+export function useRazorpayOrderPayments(
+  authClient: RazorpayAuthClient,
+  orderId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.orders(), "payments", orderId],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.order.payments({
+        query: { orderId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orderId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Add-on Query Hooks ──────────────────────────────────────────────────────
+
+/**
+ * Fetch all add-ons from Razorpay with pagination.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayAddonList(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpayAddonList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.addons(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.addon.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch a single add-on by ID.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayAddon(authClient, "addon_123");
+ * ```
+ */
+export function useRazorpayAddon(
+  authClient: RazorpayAuthClient,
+  addonId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.addon(addonId),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.addon.get({
+        query: { addonId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!addonId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Item Query Hooks ─────────────────────────────────────────────────────────
+
+/**
+ * Fetch all items from Razorpay with pagination.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayItemList(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpayItemList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    count?: number;
+    skip?: number;
+    from?: number;
+    to?: number;
+    active?: number;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.items(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.item.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch a single item by ID.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayItem(authClient, "item_123");
+ * ```
+ */
+export function useRazorpayItem(
+  authClient: RazorpayAuthClient,
+  itemId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.item(itemId),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.item.get({
+        query: { itemId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!itemId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Customer Query Hooks ────────────────────────────────────────────────────
+
+/**
+ * Fetch all customer tokens for a customer.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayCustomerTokens(authClient, "cust_123");
+ * ```
+ */
+export function useRazorpayCustomerTokens(
+  authClient: RazorpayAuthClient,
+  customerId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.tokens(customerId),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.customer.tokens({
+        query: { customerId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!customerId,
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Fetch a specific token for a customer.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayCustomerToken(authClient, "cust_123", "token_123");
+ * ```
+ */
+export function useRazorpayCustomerToken(
+  authClient: RazorpayAuthClient,
+  customerId: string,
+  tokenId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.tokens(customerId), tokenId],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.customer.token({
+        query: { customerId, tokenId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!customerId && !!tokenId,
+    ...options?.queryOptions,
+  });
+}
+
 // ─── Mutation Hooks ──────────────────────────────────────────────────────────
 
 /**
  * Upgrade or create a subscription.
- * Automatically invalidates subscription queries on success.
  *
  * @example
  * ```tsx
@@ -332,7 +905,6 @@ export function useUpgradeSubscription(
 
 /**
  * Cancel a subscription.
- * Automatically invalidates subscription queries on success.
  *
  * @example
  * ```tsx
@@ -368,12 +940,6 @@ export function useCancelSubscription(
 
 /**
  * Pause a subscription.
- *
- * @example
- * ```tsx
- * const pause = usePauseSubscription(authClient);
- * pause.mutate({});
- * ```
  */
 export function usePauseSubscription(
   authClient: RazorpayAuthClient,
@@ -403,12 +969,6 @@ export function usePauseSubscription(
 
 /**
  * Resume a paused subscription.
- *
- * @example
- * ```tsx
- * const resume = useResumeSubscription(authClient);
- * resume.mutate({});
- * ```
  */
 export function useResumeSubscription(
   authClient: RazorpayAuthClient,
@@ -438,12 +998,6 @@ export function useResumeSubscription(
 
 /**
  * Restore a subscription that was scheduled for cancellation at cycle end.
- *
- * @example
- * ```tsx
- * const restore = useRestoreSubscription(authClient);
- * restore.mutate({});
- * ```
  */
 export function useRestoreSubscription(
   authClient: RazorpayAuthClient,
@@ -505,6 +1059,466 @@ export function useUpdateSubscription(
       queryClient.invalidateQueries({
         queryKey: razorpayQueryKeys.subscriptions(),
       });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Refund Mutation Hooks ───────────────────────────────────────────────────
+
+/**
+ * Edit notes on an existing refund.
+ *
+ * @example
+ * ```tsx
+ * const edit = useEditRefund(authClient);
+ * edit.mutate({ refundId: "rfnd_123", notes: { reason: "customer_request" } });
+ * ```
+ */
+export function useEditRefund(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      refundId: string;
+      notes: Record<string, string | number>;
+    }) => {
+      const { data, error } = await authClient.razorpay.refund.edit(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.refunds() });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Invoice Mutation Hooks ──────────────────────────────────────────────────
+
+/**
+ * Create a standalone invoice.
+ *
+ * @example
+ * ```tsx
+ * const create = useCreateInvoice(authClient);
+ * create.mutate({ line_items: [{ id: "item_1", quantity: 1 }], currency: "INR" });
+ * ```
+ */
+export function useCreateInvoice(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: any) => {
+      const { data, error } = await authClient.razorpay.invoice.create(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.invoices(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Edit an existing invoice.
+ */
+export function useEditInvoice(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: any) => {
+      const { data, error } = await authClient.razorpay.invoice.edit(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.invoices(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Issue a draft invoice.
+ */
+export function useIssueInvoice(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { invoiceId: string }) => {
+      const { data, error } = await authClient.razorpay.invoice.issue(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.invoices(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Delete a draft invoice.
+ */
+export function useDeleteInvoice(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { invoiceId: string }) => {
+      const { data, error } = await authClient.razorpay.invoice.delete(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.invoices(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Cancel an issued invoice.
+ */
+export function useCancelInvoice(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { invoiceId: string }) => {
+      const { data, error } = await authClient.razorpay.invoice.cancel(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.invoices(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Send an SMS or email notification for an invoice.
+ */
+export function useNotifyByInvoice(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  return useMutation({
+    mutationFn: async (body: {
+      invoiceId: string;
+      medium: "email" | "sms";
+    }) => {
+      const { data, error } = await authClient.razorpay.invoice.notify(body);
+      if (error) throw error;
+      return data;
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Order Mutation Hooks ────────────────────────────────────────────────────
+
+/**
+ * Edit notes on an existing order.
+ */
+export function useEditOrder(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { orderId: string; notes: Record<string, string | number> }) => {
+      const { data, error } = await authClient.razorpay.order.edit(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.orders() });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Payment Mutation Hooks ──────────────────────────────────────────────────
+
+/**
+ * Edit notes on an existing payment.
+ */
+export function useEditPayment(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      paymentId: string;
+      notes: Record<string, string | number>;
+    }) => {
+      const { data, error } = await authClient.razorpay.payment.edit(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.payments(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Customer Mutation Hooks ─────────────────────────────────────────────────
+
+/**
+ * Add a bank account to a customer.
+ */
+export function useAddBankAccount(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      customerId: string;
+      ifsc_code: string;
+      account_number: string;
+      beneficiary_name?: string;
+    }) => {
+      const { data, error } =
+        await authClient.razorpay.customer.bankAccount(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.customers(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Delete a bank account from a customer.
+ */
+export function useDeleteBankAccount(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      customerId: string;
+      bankAccountId: string;
+    }) => {
+      const { data, error } =
+        await authClient.razorpay.customer.bankAccountDelete(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.customers(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Delete a saved token for a customer.
+ */
+export function useDeleteToken(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { customerId: string; tokenId: string }) => {
+      const { data, error } =
+        await authClient.razorpay.customer.tokenDelete(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.customers(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Subscription Add-on Mutation Hook ────────────────────────────────────────
+
+/**
+ * Create an add-on for a subscription.
+ */
+export function useCreateSubscriptionAddon(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      subscriptionId: string;
+      item: { id: string } | { name: string; amount: number; currency: string; description?: string };
+      quantity?: number;
+    }) => {
+      const { data, error } =
+        await authClient.razorpay.subscription.addon(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.subscriptions(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Add-on Mutation Hook ────────────────────────────────────────────────────
+
+/**
+ * Delete an add-on by ID.
+ */
+export function useDeleteAddon(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { addonId: string }) => {
+      const { data, error } = await authClient.razorpay.addon.delete(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.addons() });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Item Mutation Hooks ─────────────────────────────────────────────────────
+
+/**
+ * Create a new item.
+ */
+export function useCreateItem(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: any) => {
+      const { data, error } = await authClient.razorpay.item.create(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.items() });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Edit an existing item.
+ */
+export function useEditItem(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: any) => {
+      const { data, error } = await authClient.razorpay.item.edit(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.items() });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Delete an item by ID.
+ */
+export function useDeleteItem(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<UseMutationOptions<any, Error, any>, "mutationFn">;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { itemId: string }) => {
+      const { data, error } = await authClient.razorpay.item.delete(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.items() });
     },
     ...options?.mutationOptions,
   });

@@ -51,6 +51,48 @@ describe("RAZORPAY_ERROR_CODES", () => {
       "INVALID_PAYMENT_SIGNATURE",
       "INVALID_ORDER_AMOUNT",
       "INVALID_PARTIAL_PAYMENT",
+      // Refund errors
+      "REFUND_NOT_FOUND",
+      "REFUND_FETCH_FAILED",
+      "REFUND_LIST_FAILED",
+      "REFUND_EDIT_FAILED",
+      // Invoice errors
+      "INVOICE_NOT_FOUND",
+      "INVOICE_CREATE_FAILED",
+      "INVOICE_FETCH_FAILED",
+      "INVOICE_LIST_FAILED",
+      "INVOICE_EDIT_FAILED",
+      "INVOICE_ISSUE_FAILED",
+      "INVOICE_DELETE_FAILED",
+      "INVOICE_CANCEL_FAILED",
+      "INVOICE_NOTIFY_FAILED",
+      // Order errors
+      "ORDER_FETCH_FAILED",
+      "ORDER_LIST_FAILED",
+      "ORDER_EDIT_FAILED",
+      "ORDER_PAYMENTS_FETCH_FAILED",
+      // Payment errors
+      "PAYMENT_LIST_FAILED",
+      "PAYMENT_EDIT_FAILED",
+      // Customer bank account errors
+      "BANK_ACCOUNT_ADD_FAILED",
+      "BANK_ACCOUNT_DELETE_FAILED",
+      // Customer token errors
+      "TOKEN_FETCH_FAILED",
+      "TOKEN_DELETE_FAILED",
+      // Add-on errors
+      "ADDON_NOT_FOUND",
+      "ADDON_FETCH_FAILED",
+      "ADDON_LIST_FAILED",
+      "ADDON_CREATE_FAILED",
+      "ADDON_DELETE_FAILED",
+      // Item errors
+      "ITEM_NOT_FOUND",
+      "ITEM_CREATE_FAILED",
+      "ITEM_FETCH_FAILED",
+      "ITEM_LIST_FAILED",
+      "ITEM_EDIT_FAILED",
+      "ITEM_DELETE_FAILED",
     ];
 
     for (const key of expectedKeys) {
@@ -58,8 +100,8 @@ describe("RAZORPAY_ERROR_CODES", () => {
     }
   });
 
-  it("has 43 error codes", () => {
-    expect(Object.keys(RAZORPAY_ERROR_CODES).length).toBe(43);
+  it("has 77 error codes", () => {
+    expect(Object.keys(RAZORPAY_ERROR_CODES).length).toBe(77);
   });
 
   it("all error codes are non-empty strings", () => {

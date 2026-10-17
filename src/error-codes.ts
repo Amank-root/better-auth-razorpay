@@ -34,7 +34,7 @@ export const RAZORPAY_ERROR_CODES = {
   SUBSCRIPTION_RESUME_FAILED: "Failed to resume subscription",
   SUBSCRIPTION_UPDATE_FAILED: "Failed to update subscription",
   SUBSCRIPTION_LINK_CREATE_FAILED: "Failed to create subscription link",
-  INVOICE_FETCH_FAILED: "Failed to fetch invoices",
+  SUBSCRIPTION_INVOICE_FETCH_FAILED: "Failed to fetch invoices",
   OFFER_LINK_FAILED: "Failed to link offer to subscription",
   OFFER_DELETE_FAILED: "Failed to delete offer from subscription",
   CUSTOMER_EDIT_FAILED: "Failed to edit customer details",
@@ -49,4 +49,54 @@ export const RAZORPAY_ERROR_CODES = {
   INVALID_PAYMENT_SIGNATURE: "Invalid Razorpay payment signature.",
   INVALID_ORDER_AMOUNT: "Razorpay order amount must be at least 100 subunits for INR.",
   INVALID_PARTIAL_PAYMENT: "firstPaymentMinAmount can only be used when partialPayment is true.",
+
+  // Refund errors
+  REFUND_NOT_FOUND: "Refund not found",
+  REFUND_FETCH_FAILED: "Failed to fetch refund",
+  REFUND_LIST_FAILED: "Failed to list refunds",
+  REFUND_EDIT_FAILED: "Failed to edit refund",
+
+  // Invoice errors
+  INVOICE_NOT_FOUND: "Invoice not found",
+  INVOICE_CREATE_FAILED: "Failed to create invoice",
+  INVOICE_FETCH_FAILED: "Failed to fetch invoice",
+  INVOICE_LIST_FAILED: "Failed to list invoices",
+  INVOICE_EDIT_FAILED: "Failed to edit invoice",
+  INVOICE_ISSUE_FAILED: "Failed to issue invoice",
+  INVOICE_DELETE_FAILED: "Failed to delete invoice",
+  INVOICE_CANCEL_FAILED: "Failed to cancel invoice",
+  INVOICE_NOTIFY_FAILED: "Failed to send invoice notification",
+
+  // Order errors
+  ORDER_FETCH_FAILED: "Failed to fetch order",
+  ORDER_LIST_FAILED: "Failed to list orders",
+  ORDER_EDIT_FAILED: "Failed to edit order",
+  ORDER_PAYMENTS_FETCH_FAILED: "Failed to fetch payments for order",
+
+  // Payment errors
+  PAYMENT_LIST_FAILED: "Failed to list payments",
+  PAYMENT_EDIT_FAILED: "Failed to edit payment",
+
+  // Customer bank account errors
+  BANK_ACCOUNT_ADD_FAILED: "Failed to add bank account to customer",
+  BANK_ACCOUNT_DELETE_FAILED: "Failed to delete bank account from customer",
+
+  // Customer token errors
+  TOKEN_FETCH_FAILED: "Failed to fetch customer tokens",
+  TOKEN_DELETE_FAILED: "Failed to delete customer token",
+
+  // Add-on errors
+  ADDON_NOT_FOUND: "Add-on not found",
+  ADDON_FETCH_FAILED: "Failed to fetch add-on",
+  ADDON_LIST_FAILED: "Failed to list add-ons",
+  ADDON_CREATE_FAILED: "Failed to create add-on",
+  ADDON_DELETE_FAILED: "Failed to delete add-on",
+
+  // Item errors
+  ITEM_NOT_FOUND: "Item not found",
+  ITEM_CREATE_FAILED: "Failed to create item",
+  ITEM_FETCH_FAILED: "Failed to fetch item",
+  ITEM_LIST_FAILED: "Failed to list items",
+  ITEM_EDIT_FAILED: "Failed to edit item",
+  ITEM_DELETE_FAILED: "Failed to delete item",
 } as const;

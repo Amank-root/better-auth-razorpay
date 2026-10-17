@@ -663,3 +663,261 @@ export async function onSubscriptionCancelled(
     );
   }
 }
+
+// ─── Payment Webhook Handlers ───────────────────────────────────────────────
+
+/**
+ * payment.authorized
+ *
+ * Payment was successfully authorized (but not yet captured).
+ */
+export async function onPaymentAuthorized(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const payment = event.payload.payment?.entity;
+    if (!payment) return;
+
+    await options.onPaymentAuthorized?.({
+      event,
+      payment: payment as Parameters<NonNullable<typeof options.onPaymentAuthorized>>[0]["payment"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (payment.authorized) failed: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * payment.captured
+ *
+ * Payment was successfully captured.
+ */
+export async function onPaymentCaptured(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const payment = event.payload.payment?.entity;
+    if (!payment) return;
+
+    await options.onPaymentCaptured?.({
+      event,
+      payment: payment as Parameters<NonNullable<typeof options.onPaymentCaptured>>[0]["payment"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (payment.captured) failed: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * payment.failed
+ *
+ * Payment attempt failed.
+ */
+export async function onPaymentFailed(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const payment = event.payload.payment?.entity;
+    if (!payment) return;
+
+    await options.onPaymentFailed?.({
+      event,
+      payment: payment as Parameters<NonNullable<typeof options.onPaymentFailed>>[0]["payment"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (payment.failed) failed: ${error.message}`,
+    );
+  }
+}
+
+// ─── Order Webhook Handlers ─────────────────────────────────────────────────
+
+/**
+ * order.paid
+ *
+ * An order was successfully paid.
+ */
+export async function onOrderPaid(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const order = event.payload.order?.entity;
+    if (!order) return;
+
+    await options.onOrderPaid?.({
+      event,
+      order: order as Parameters<NonNullable<typeof options.onOrderPaid>>[0]["order"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (order.paid) failed: ${error.message}`,
+    );
+  }
+}
+
+// ─── Refund Webhook Handlers ────────────────────────────────────────────────
+
+/**
+ * refund.created
+ *
+ * A refund was created.
+ */
+export async function onRefundCreated(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const refund = event.payload.refund?.entity;
+    if (!refund) return;
+
+    await options.onRefundCreated?.({
+      event,
+      refund: refund as Parameters<NonNullable<typeof options.onRefundCreated>>[0]["refund"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (refund.created) failed: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * refund.processed
+ *
+ * A refund was successfully processed.
+ */
+export async function onRefundProcessed(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const refund = event.payload.refund?.entity;
+    if (!refund) return;
+
+    await options.onRefundProcessed?.({
+      event,
+      refund: refund as Parameters<NonNullable<typeof options.onRefundProcessed>>[0]["refund"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (refund.processed) failed: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * refund.failed
+ *
+ * A refund processing failed.
+ */
+export async function onRefundFailed(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const refund = event.payload.refund?.entity;
+    if (!refund) return;
+
+    await options.onRefundFailed?.({
+      event,
+      refund: refund as Parameters<NonNullable<typeof options.onRefundFailed>>[0]["refund"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (refund.failed) failed: ${error.message}`,
+    );
+  }
+}
+
+// ─── Invoice Webhook Handlers ───────────────────────────────────────────────
+
+/**
+ * invoice.paid
+ *
+ * An invoice was fully paid.
+ */
+export async function onInvoicePaid(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const invoice = event.payload.invoice?.entity;
+    if (!invoice) return;
+
+    await options.onInvoicePaid?.({
+      event,
+      invoice: invoice as Parameters<NonNullable<typeof options.onInvoicePaid>>[0]["invoice"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (invoice.paid) failed: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * invoice.partially_paid
+ *
+ * A partial payment was made on an invoice.
+ */
+export async function onInvoicePartiallyPaid(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const invoice = event.payload.invoice?.entity;
+    if (!invoice) return;
+
+    await options.onInvoicePartiallyPaid?.({
+      event,
+      invoice: invoice as Parameters<NonNullable<typeof options.onInvoicePartiallyPaid>>[0]["invoice"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (invoice.partially_paid) failed: ${error.message}`,
+    );
+  }
+}
+
+/**
+ * invoice.expired
+ *
+ * An invoice expired without being paid.
+ */
+export async function onInvoiceExpired(
+  ctx: GenericEndpointContext,
+  options: RazorpayOptions,
+  event: RazorpayWebhookEvent,
+) {
+  try {
+    const invoice = event.payload.invoice?.entity;
+    if (!invoice) return;
+
+    await options.onInvoiceExpired?.({
+      event,
+      invoice: invoice as Parameters<NonNullable<typeof options.onInvoiceExpired>>[0]["invoice"],
+    });
+  } catch (error: any) {
+    ctx.context.logger.error(
+      `Razorpay webhook (invoice.expired) failed: ${error.message}`,
+    );
+  }
+}
