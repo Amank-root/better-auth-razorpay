@@ -36,6 +36,7 @@ export const razorpayClient = <
       "/razorpay/order/edit": "POST",
       "/razorpay/order/payments": "GET",
       "/razorpay/order/list": "GET",
+      "/razorpay/subscription/list": "GET",
       "/razorpay/payment": "GET",
       "/razorpay/payment/capture": "POST",
       "/razorpay/payment/refund": "POST",

@@ -76,6 +76,7 @@ type RazorpayAuthClient = {
       invoices: (query: any) => Promise<any>;
       pendingUpdate: (query: any) => Promise<any>;
       addon: (body: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
     };
     plan: {
       create: (body: any) => Promise<any>;
@@ -126,6 +127,12 @@ export const razorpayQueryKeys = {
       ...razorpayQueryKeys.subscriptions(),
       "razorpay",
       subscriptionId,
+    ] as const,
+  allSubscriptions: (query?: Record<string, unknown>) =>
+    [
+      ...razorpayQueryKeys.subscriptions(),
+      "all",
+      query,
     ] as const,
   subscriptionInvoices: (subscriptionId: string) =>
     [...razorpayQueryKeys.subscriptions(), "invoices", subscriptionId] as const,
@@ -433,6 +440,48 @@ export function useRazorpayPayment(
       return data;
     },
     enabled: !!paymentId,
+    ...options?.queryOptions,
+  });
+}
+
+// ─── Subscription Query Hooks (from Razorpay API) ────────────────────────────
+
+/**
+ * Fetch all subscriptions directly from the Razorpay API.
+ * Supports filtering by plan, status, and time range.
+ *
+ * @example
+ * ```tsx
+ * const { data, isLoading } = useRazorpaySubscriptions(authClient, { count: 10 });
+ * ```
+ */
+export function useRazorpaySubscriptions(
+  authClient: RazorpayAuthClient,
+  query?: {
+    from?: number;
+    to?: number;
+    count?: number;
+    skip?: number;
+    planId?: string;
+    status?: string;
+    expand?: string;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.allSubscriptions(query),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.subscription.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
     ...options?.queryOptions,
   });
 }

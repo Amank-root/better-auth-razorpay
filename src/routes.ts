@@ -112,6 +112,29 @@ const listSubscriptionsQuerySchema = z.object({
   customerType: z.enum(["user", "organization"]).optional(),
 });
 
+const fetchAllSubscriptionsQuerySchema = z.object({
+  from: z.number().optional(),
+  to: z.number().optional(),
+  count: z.number().int().positive().max(100).optional(),
+  skip: z.number().int().min(0).optional(),
+  planId: z.string().optional(),
+  status: z
+    .enum([
+      "created",
+      "authenticated",
+      "active",
+      "pending",
+      "halted",
+      "paused",
+      "cancelled",
+      "reverted",
+      "expired",
+      "completed",
+    ])
+    .optional(),
+  expand: z.string().optional(),
+});
+
 const updateSubscriptionBodySchema = z.object({
   referenceId: z.string().optional(),
   customerType: z.enum(["user", "organization"]).optional(),
@@ -1068,6 +1091,58 @@ export const listSubscriptions = (options: RazorpayOptions) => {
       });
 
       return ctx.json(subscriptions);
+    },
+  );
+};
+
+/**
+ * GET /razorpay/subscription/list
+ *
+ * List subscriptions directly from the Razorpay API (not local DB).
+ * Supports filtering by plan_id, status, and time range.
+ */
+export const fetchAllSubscriptions = (options: RazorpayOptions) => {
+  if (!options.subscription?.enabled) {
+    throw new Error("Subscriptions must be enabled");
+  }
+  return createAuthEndpoint(
+    "/razorpay/subscription/list",
+    {
+      method: "GET",
+      query: fetchAllSubscriptionsQuerySchema,
+      metadata: {
+        openapi: {
+          summary: "List subscriptions from Razorpay",
+          description:
+            "Fetch all subscriptions directly from the Razorpay API with optional filters and pagination",
+          responses: { 200: { description: "Subscriptions list from Razorpay" } },
+        },
+      },
+      use: [razorpaySessionMiddleware],
+    },
+    async (ctx) => {
+      try {
+        const client = options.razorpayClient!;
+        const params: Record<string, unknown> = {};
+        if (ctx.query.count) params.count = ctx.query.count;
+        if (ctx.query.skip) params.skip = ctx.query.skip;
+        if (ctx.query.from) params.from = ctx.query.from;
+        if (ctx.query.to) params.to = ctx.query.to;
+        if (ctx.query.planId) params.plan_id = ctx.query.planId;
+        if (ctx.query.status) params.status = ctx.query.status;
+        if (ctx.query.expand) params["expand[]"] = ctx.query.expand;
+
+        const subscriptions = await (client.subscriptions as any).all(params);
+        return ctx.json(subscriptions);
+      } catch (error: any) {
+        ctx.context.logger.error(
+          `Failed to list subscriptions from Razorpay: ${error.message}`,
+        );
+        throw createAPIError(
+          "INTERNAL_SERVER_ERROR",
+          RAZORPAY_ERROR_CODES.SUBSCRIPTION_LIST_FAILED,
+        );
+      }
     },
   );
 };

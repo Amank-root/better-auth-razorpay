@@ -1231,3 +1231,25 @@ export type CreateSubscriptionAddonBody = {
     | { name: string; amount: number; currency: string; description?: string };
   quantity?: number | undefined;
 };
+
+// ─── Subscriptions: Fetch All from Razorpay ─────────────────────────────────
+
+export type FetchAllSubscriptionsQuery = {
+  from?: number;
+  to?: number;
+  count?: number;
+  skip?: number;
+  planId?: string;
+  status?:
+    | "created"
+    | "authenticated"
+    | "active"
+    | "pending"
+    | "halted"
+    | "paused"
+    | "cancelled"
+    | "reverted"
+    | "expired"
+    | "completed";
+  expand?: string;
+};

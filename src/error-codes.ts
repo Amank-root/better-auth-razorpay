@@ -56,6 +56,9 @@ export const RAZORPAY_ERROR_CODES = {
   REFUND_LIST_FAILED: "Failed to list refunds",
   REFUND_EDIT_FAILED: "Failed to edit refund",
 
+  // Subscription list errors
+  SUBSCRIPTION_LIST_FAILED: "Failed to list subscriptions from Razorpay",
+
   // Invoice errors
   INVOICE_NOT_FOUND: "Invoice not found",
   INVOICE_CREATE_FAILED: "Failed to create invoice",

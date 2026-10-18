@@ -38,6 +38,7 @@ import {
     fetchAllOrders,
     fetchAllPayments,
     fetchAllRefunds,
+    fetchAllSubscriptions,
     fetchCustomer,
     fetchInvoice,
     fetchInvoices,
@@ -143,6 +144,7 @@ export type {
   EditItemBody,
   DeleteItemQuery,
   FetchAllItemsQuery,
+  FetchAllSubscriptionsQuery,
   RazorpayPaginationQuery,
   VerifyRazorpayPaymentInput,
   VerifyRazorpayPaymentResponse,
@@ -289,6 +291,7 @@ export const razorpay = <O extends RazorpayOptions>(options: O) => {
     editOrder: editOrder(resolvedOptions),
     fetchPaymentsForOrder: fetchPaymentsForOrder(resolvedOptions),
     fetchAllOrders: fetchAllOrders(resolvedOptions),
+    fetchAllSubscriptions: fetchAllSubscriptions(resolvedOptions),
   };
 
   const oneTimePaymentEndpoints = {
