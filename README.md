@@ -1,6 +1,6 @@
 # @amank-root/better-auth-razorpay
 
-Full [Razorpay](https://razorpay.com) integration plugin for [Better Auth](https://better-auth.js.org) — subscriptions, one-time payments, invoices, refunds, customers, add-ons, items, and webhook handling.
+Full [Razorpay](https://razorpay.com) integration plugin for [Better Auth](https://better-auth.com/) — subscriptions, one-time payments, invoices, refunds, customers, add-ons, items, and webhook handling.
 
 > A Better Auth plugin that bridges Razorpay's subscription and payment APIs with Better Auth's authentication and database layer.
 
