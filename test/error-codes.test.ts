@@ -51,6 +51,7 @@ describe("RAZORPAY_ERROR_CODES", () => {
       "INVALID_PAYMENT_SIGNATURE",
       "INVALID_ORDER_AMOUNT",
       "INVALID_PARTIAL_PAYMENT",
+      "SUBSCRIPTION_LIST_FAILED",
       // Refund errors
       "REFUND_NOT_FOUND",
       "REFUND_FETCH_FAILED",
@@ -100,8 +101,8 @@ describe("RAZORPAY_ERROR_CODES", () => {
     }
   });
 
-  it("has 77 error codes", () => {
-    expect(Object.keys(RAZORPAY_ERROR_CODES).length).toBe(77);
+  it("has 78 error codes", () => {
+    expect(Object.keys(RAZORPAY_ERROR_CODES).length).toBe(78);
   });
 
   it("all error codes are non-empty strings", () => {
