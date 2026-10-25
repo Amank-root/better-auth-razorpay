@@ -10,7 +10,11 @@ import {
     serializeRazorpayPayment,
     serializeRazorpayRefund,
     serializeRazorpayOrder,
+    serializeRazorpayTransfer,
+    serializeRazorpayReversal,
+    serializeRazorpayTransferList,
     toRazorpayOrderInput,
+    toRazorpayTransferInput,
 } from "./razorpay";
 import {
     cancelPendingUpdate,
@@ -72,6 +76,11 @@ import { getSchema } from "./schema";
 import { verifyRazorpayPaymentSignature, verifyRazorpayPaymentStatus } from "./signature";
 import type {
     CreateRazorpayOrderInput,
+    CreateRazorpayTransferInput,
+    EditRazorpayTransferBody,
+    GetRazorpayTransferQuery,
+    ListTransfersQuery,
+    ReverseRazorpayTransferBody,
     RazorpayOptions,
     Subscription,
     WithRazorpayCustomerId,
@@ -152,6 +161,14 @@ export type {
   RazorpayPaginationQuery,
   VerifyRazorpayPaymentInput,
   VerifyRazorpayPaymentResponse,
+  CreateRazorpayTransferInput,
+  CreateRazorpayTransferItem,
+  GetRazorpayTransferQuery,
+  ListTransfersQuery,
+  EditRazorpayTransferBody,
+  ReverseRazorpayTransferBody,
+  RazorpayTransferResponse,
+  RazorpayReversalResponse,
 } from "./types";
 
 const notesSchema = z
@@ -211,6 +228,43 @@ const refundPaymentBodySchema = z.object({
   speed: z.enum(["normal", "optimum"]).optional(),
   receipt: z.string().min(1).optional(),
   notes: notesSchema.optional(),
+});
+
+const transferItemSchema = z.object({
+  account: z.string().min(1),
+  amount: z.number().int().positive(),
+  currency: z.string().length(3).toUpperCase(),
+  notes: notesSchema.optional(),
+  onHold: z.boolean().optional(),
+  onHoldUntil: z.number().int().positive().optional(),
+  linkedAccountNotes: z.array(z.string()).optional(),
+});
+
+const createTransferBodySchema = z.object({
+  paymentId: z.string().min(1),
+  transfers: z.array(transferItemSchema).min(1),
+});
+
+const transferIdQuerySchema = z.object({
+  id: z.string().min(1),
+});
+
+const listTransfersQuerySchema = z.object({
+  paymentId: z.string().min(1).optional(),
+  limit: z.number().int().positive().max(100).optional(),
+  from: z.number().int().optional(),
+  to: z.number().int().optional(),
+});
+
+const editTransferBodySchema = z.object({
+  transferId: z.string().min(1),
+  onHold: z.boolean().optional(),
+  onHoldUntil: z.number().int().positive().optional(),
+});
+
+const reverseTransferBodySchema = z.object({
+  transferId: z.string().min(1),
+  amount: z.number().int().positive().optional(),
 });
 
 declare module "@better-auth/core" {
@@ -435,6 +489,146 @@ export const razorpay = <O extends RazorpayOptions>(options: O) => {
         );
 
         return ctx.json(serializeRazorpayRefund(refund as never));
+      },
+    ),
+    createRazorpayTransfer: createAuthEndpoint(
+      "/razorpay/transfer/create",
+      {
+        method: "POST",
+        body: createTransferBodySchema,
+        use: useSession,
+      },
+      async (ctx) => {
+        try {
+          const transfers = ctx.body.transfers.map(toRazorpayTransferInput);
+          const result = await client.payments.transfer(ctx.body.paymentId, {
+            transfers: transfers as never,
+          });
+
+          return ctx.json(
+            result.items.map((t: any) => serializeRazorpayTransfer(t)),
+          );
+        } catch {
+          throw createAPIError(
+            "BAD_REQUEST",
+            RAZORPAY_ERROR_CODES.TRANSFER_CREATE_FAILED,
+          );
+        }
+      },
+    ),
+    getRazorpayTransfer: createAuthEndpoint(
+      "/razorpay/transfer/get",
+      {
+        method: "GET",
+        query: transferIdQuerySchema,
+        use: useSession,
+      },
+      async (ctx) => {
+        try {
+          const transfer = await client.transfers.fetch(ctx.query.id);
+          return ctx.json(serializeRazorpayTransfer(transfer as never));
+        } catch {
+          throw createAPIError(
+            "NOT_FOUND",
+            RAZORPAY_ERROR_CODES.TRANSFER_FETCH_FAILED,
+          );
+        }
+      },
+    ),
+    listRazorpayTransfers: createAuthEndpoint(
+      "/razorpay/transfer/list",
+      {
+        method: "GET",
+        query: listTransfersQuerySchema,
+        use: useSession,
+      },
+      async (ctx) => {
+        try {
+          let result;
+          if (ctx.query.paymentId !== undefined) {
+            result = await client.payments.fetchTransfer(ctx.query.paymentId);
+          } else {
+            const params: Record<string, unknown> = {};
+            if (ctx.query.limit !== undefined) {
+              params.limit = ctx.query.limit;
+            }
+            if (ctx.query.from !== undefined) {
+              params.from = ctx.query.from;
+            }
+            if (ctx.query.to !== undefined) {
+              params.to = ctx.query.to;
+            }
+            result = await client.transfers.all(params);
+          }
+
+          return ctx.json({
+            entity: result.entity,
+            count: result.count,
+            transfers: result.items.map((t: any) =>
+              serializeRazorpayTransfer(t),
+            ),
+          });
+        } catch {
+          throw createAPIError(
+            "BAD_REQUEST",
+            RAZORPAY_ERROR_CODES.TRANSFER_LIST_FAILED,
+          );
+        }
+      },
+    ),
+    editRazorpayTransfer: createAuthEndpoint(
+      "/razorpay/transfer/edit",
+      {
+        method: "POST",
+        body: editTransferBodySchema,
+        use: useSession,
+      },
+      async (ctx) => {
+        const edits: { on_hold?: boolean | 0 | 1; on_hold_until?: number } = {};
+        if (ctx.body.onHold !== undefined) {
+          edits.on_hold = ctx.body.onHold;
+        }
+        if (ctx.body.onHoldUntil !== undefined) {
+          edits.on_hold_until = ctx.body.onHoldUntil;
+        }
+
+        try {
+          const transfer = await client.transfers.edit(
+            ctx.body.transferId,
+            edits,
+          );
+          return ctx.json(serializeRazorpayTransfer(transfer as never));
+        } catch {
+          throw createAPIError(
+            "BAD_REQUEST",
+            RAZORPAY_ERROR_CODES.TRANSFER_EDIT_FAILED,
+          );
+        }
+      },
+    ),
+    reverseRazorpayTransfer: createAuthEndpoint(
+      "/razorpay/transfer/reverse",
+      {
+        method: "POST",
+        body: reverseTransferBodySchema,
+        use: useSession,
+      },
+      async (ctx) => {
+        try {
+          const reversal =
+            ctx.body.amount !== undefined
+              ? await client.transfers.reverse(ctx.body.transferId, {
+                  amount: ctx.body.amount,
+                })
+              : await client.transfers.reverse(ctx.body.transferId);
+
+          return ctx.json(serializeRazorpayReversal(reversal as never));
+        } catch {
+          throw createAPIError(
+            "BAD_REQUEST",
+            RAZORPAY_ERROR_CODES.TRANSFER_REVERSE_FAILED,
+          );
+        }
       },
     ),
   };

@@ -342,6 +342,49 @@ if (result.valid) {
 }
 ```
 
+### Marketplace Transfers (Route API)
+
+| Method | Path                       | Description                                      |
+|--------|----------------------------|--------------------------------------------------|
+| `POST` | `/razorpay/transfer/create` | Create transfers (split payments) from a payment |
+| `GET`  | `/razorpay/transfer/get`    | Fetch a transfer by ID                          |
+| `GET`  | `/razorpay/transfer/list`   | List transfers for a payment or all transfers   |
+| `POST` | `/razorpay/transfer/edit`   | Edit settlement hold on a transfer               |
+| `POST` | `/razorpay/transfer/reverse`| Reverse all or part of a transfer                |
+
+> **Requires Razorpay Route:** These endpoints use Razorpay's Route API for
+> marketplace split payments. Ensure your Razorpay account has Route enabled and
+> linked accounts configured.
+
+**Example: Create split transfers from a payment**
+
+```ts
+const result = await auth.api.createRazorpayTransfer({
+  body: {
+    paymentId: "pay_ToE8B0nAigRCvE",
+    transfers: [
+      { account: "acc_ABC123", amount: 10000, currency: "INR" },
+      { account: "acc_XYZ456", amount: 20000, currency: "INR", onHold: true },
+    ],
+  },
+});
+// result => { transfers: [{ id, status, amount, ... }, ...] }
+```
+
+**Example: Reverse a transfer**
+
+```ts
+// Reverse the full transfer amount
+await auth.api.reverseRazorpayTransfer({
+  body: { transferId: "trf_123" },
+});
+
+// Reverse a partial amount
+await auth.api.reverseRazorpayTransfer({
+  body: { transferId: "trf_123", amount: 5000 },
+});
+```
+
 ### Subscription Management
 
 | Method | Path                        | Description                                              |
@@ -789,11 +832,11 @@ npm test
 ```
 
 The test suite uses [Vitest](https://vitest.dev) and covers:
-- Razorpay serializers (orders, payments, refunds)
-- Order input mapping (`toRazorpayOrderInput`)
+- Razorpay serializers (orders, payments, refunds, transfers)
+- Order/transfer input mapping (`toRazorpayOrderInput`, `toRazorpayTransferInput`)
 - Webhook handlers (all 10 new webhook events)
 - Schema validation
-- Signature verification
+- Signature verification (HMAC + payment status)
 - Error code structure and count
 - Utility functions (status checks, trial helpers)
 
