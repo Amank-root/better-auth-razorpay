@@ -1,10 +1,10 @@
 {
   "name": "@amank-root/better-auth-razorpay",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Full Razorpay plugin for Better Auth: subscriptions and one-time orders, customers, plans, webhooks.",
   "author": {
     "name": "Aman Kushwaha",
-    "url": "https://github.com/Amank-root"
+    "url": "https://amankushwaha.dev"
   },
   "license": "MIT",
   "repository": {
@@ -64,7 +64,7 @@
     "typecheck": "bun check",
     "test": "vitest run",
     "build": "tsup",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
     "better-auth": "^1.7.0",
