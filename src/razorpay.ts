@@ -19,6 +19,7 @@ type RazorpayOrderCreateRequestBody = {
   notes?: Record<string, string | number | null>;
   partial_payment?: boolean;
   first_payment_min_amount?: number;
+  payment_capture?: boolean;
 };
 
 type RazorpayOrder = {
@@ -122,6 +123,10 @@ export const toRazorpayOrderInput = (
 
   if (input.firstPaymentMinAmount !== undefined) {
     order.first_payment_min_amount = input.firstPaymentMinAmount;
+  }
+
+  if (input.paymentCapture !== undefined) {
+    order.payment_capture = input.paymentCapture;
   }
 
   return order;

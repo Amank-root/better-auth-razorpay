@@ -822,6 +822,18 @@ export type CreateRazorpayOrderInput = {
   notes?: RazorpayNotes | undefined;
   partialPayment?: boolean | undefined;
   firstPaymentMinAmount?: number | undefined;
+  /**
+   * Whether to auto-capture the payment at authorization time.
+   *
+   * - `true` (or `undefined`) — Auto-Capture: the payment is captured immediately
+   *   after authorization (Razorpay's default).
+   * - `false` — Manual Capture: the payment is authorized but NOT captured until
+   *   you call the `/razorpay/payment/capture` endpoint (e.g. when the item ships).
+   *
+   * Note: Manual capture requires your Razorpay Dashboard to be configured for
+   * "Manual Capture" mode.
+   */
+  paymentCapture?: boolean | undefined;
 };
 
 export type VerifyRazorpayPaymentInput = {
