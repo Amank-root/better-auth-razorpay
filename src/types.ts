@@ -828,6 +828,13 @@ export type VerifyRazorpayPaymentInput = {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
+  /**
+   * Expected payment amount (in currency subunits, e.g. paise) to validate
+   * against the actual amount fetched from Razorpay. When provided, the
+   * `verify-payment` endpoint will reject signatures whose underlying payment
+   * amount does not match.
+   */
+  expectedAmount?: number | undefined;
 };
 
 export type RazorpayOrderResponse = {
@@ -894,6 +901,26 @@ export type RazorpayRefundResponse = {
 
 export type VerifyRazorpayPaymentResponse = {
   valid: boolean;
+  /**
+   * The payment status as reported by Razorpay (e.g. "captured", "failed").
+   * Populated on every response — even when the signature is invalid — so you
+   * can distinguish a forged signature from a legitimately failed payment.
+   */
+  paymentStatus?: string | undefined;
+  /** Payment amount in subunits, fetched from Razorpay. */
+  amount?: number | undefined;
+  /** Currency code, fetched from Razorpay. */
+  currency?: string | undefined;
+  /** The order_id associated with the payment. */
+  orderId?: string | null | undefined;
+  /** Machine-readable reason when `valid` is false. */
+  reason?:
+    | "invalid_signature"
+    | "order_mismatch"
+    | "amount_mismatch"
+    | "payment_not_captured"
+    | string
+    | undefined;
 };
 
 // ─── Pagination ─────────────────────────────────────────────────────────────

@@ -69,7 +69,7 @@ import {
     upgradeSubscription,
 } from "./routes";
 import { getSchema } from "./schema";
-import { verifyRazorpayPaymentSignature } from "./signature";
+import { verifyRazorpayPaymentSignature, verifyRazorpayPaymentStatus } from "./signature";
 import type {
     CreateRazorpayOrderInput,
     RazorpayOptions,
@@ -84,7 +84,11 @@ export {
   createRazorpayPaymentSignature,
   createRazorpayWebhookSignature,
   verifyRazorpayPaymentSignature,
+  verifyRazorpayPaymentStatus,
   verifyRazorpayWebhookSignature,
+} from "./signature";
+export type {
+  RazorpayPaymentVerificationStatus,
 } from "./signature";
 export type {
   CreateRazorpayOrderInput,
@@ -191,6 +195,7 @@ const verifyPaymentBodySchema = z.object({
   razorpayOrderId: z.string().min(1),
   razorpayPaymentId: z.string().min(1),
   razorpaySignature: z.string().min(1),
+  expectedAmount: z.number().int().positive().optional(),
 });
 
 const capturePaymentBodySchema = z.object({
@@ -367,7 +372,27 @@ export const razorpay = <O extends RazorpayOptions>(options: O) => {
           });
         }
 
-        return ctx.json({ valid });
+        // Fetch the payment from Razorpay to verify its status, amount, and
+        // order association. Relying solely on the HMAC signature is
+        // insecure: a malicious user could submit a valid signature for a
+        // failed payment or a different amount.
+        let payment;
+        try {
+          payment = await client.payments.fetch(ctx.body.razorpayPaymentId);
+        } catch {
+          throw createAPIError(
+            "INTERNAL_SERVER_ERROR",
+            RAZORPAY_ERROR_CODES.PAYMENT_FETCH_FAILED,
+          );
+        }
+
+        const result = verifyRazorpayPaymentStatus(
+          payment,
+          ctx.body.razorpayOrderId,
+          ctx.body.expectedAmount,
+        );
+
+        return ctx.json(result);
       },
     ),
     captureRazorpayPayment: createAuthEndpoint(

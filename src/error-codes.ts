@@ -79,6 +79,12 @@ export const RAZORPAY_ERROR_CODES = {
   // Payment errors
   PAYMENT_LIST_FAILED: "Failed to list payments",
   PAYMENT_EDIT_FAILED: "Failed to edit payment",
+  PAYMENT_FETCH_FAILED: "Failed to fetch payment from Razorpay",
+  PAYMENT_NOT_CAPTURED:
+    "Payment is not captured. Only provision goods after receiving the order.paid webhook event.",
+  PAYMENT_AMOUNT_MISMATCH:
+    "Payment amount does not match the expected amount.",
+  PAYMENT_ORDER_MISMATCH: "Payment does not belong to the specified order.",
 
   // Customer bank account errors
   BANK_ACCOUNT_ADD_FAILED: "Failed to add bank account to customer",
