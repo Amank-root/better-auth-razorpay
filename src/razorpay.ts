@@ -2,6 +2,7 @@ import Razorpay from "razorpay";
 
 import type {
   CreateRazorpayOrderInput,
+  CreateRazorpayTransferItem,
   RazorpayOrderResponse,
   RazorpayOrderListResponse,
   RazorpayPaymentResponse,
@@ -10,6 +11,8 @@ import type {
   RazorpayPluginOptions,
   RazorpayRefundResponse,
   RazorpayRefundListResponse,
+  RazorpayReversalResponse,
+  RazorpayTransferResponse,
 } from "./types.js";
 
 type RazorpayOrderCreateRequestBody = {
@@ -70,6 +73,59 @@ type RazorpayRefund = {
   speed_processed?: string | null;
 };
 
+type RazorpayTransfer = {
+  id: string;
+  entity: string;
+  amount: number | string;
+  currency: string;
+  status: string;
+  settlement_status?: string | null;
+  source: string;
+  recipient: string;
+  amount_reversed: number;
+  fees: number;
+  tax: number | null;
+  recipient_settlement_id: string | null;
+  recipient_settlement: string | null;
+  created_at: number;
+  processed_at: number;
+  notes?: Record<string, string | number | null>;
+  error: {
+    code: string | null;
+    description: string | null;
+    reason: string | null;
+    field: string | null;
+    step: string | null;
+    id: string | null;
+    source: string | null;
+    metadata: string | null;
+  } | null;
+};
+
+type RazorpayReversal = {
+  id: string;
+  entity: string;
+  transfer_id: string;
+  amount: number;
+  fee: number | null;
+  tax: number | null;
+  currency: string;
+  notes: Record<string, unknown>;
+  initiator_id: string | null;
+  customer_refund_id: string | null;
+  created_at: number;
+};
+
+type RazorpayTransferCreateItem = {
+  account: string;
+  amount: number;
+  currency: string;
+  notes?: Record<string, string | number | null>;
+  on_hold?: boolean | 0 | 1;
+  on_hold_until?: number;
+  linked_account_notes?: string[];
+};
+
 type RazorpayClient = {
   orders: {
     create(input: RazorpayOrderCreateRequestBody): Promise<RazorpayOrder>;
@@ -91,6 +147,27 @@ type RazorpayClient = {
         notes?: Record<string, string | number | null>;
       },
     ): Promise<RazorpayRefund>;
+    /** Create transfers (split payments) from a payment. */
+    transfer(
+      paymentId: string,
+      params: { transfers: RazorpayTransferCreateItem[] },
+    ): Promise<{ items: RazorpayTransfer[] }>;
+    /** Fetch all transfers made against a payment. */
+    fetchTransfer(paymentId: string): Promise<{ items: RazorpayTransfer[] }>;
+  };
+  transfers: {
+    create(params: RazorpayTransferCreateItem): Promise<RazorpayTransfer>;
+    fetch(transferId: string): Promise<RazorpayTransfer>;
+    all(params?: Record<string, unknown>): Promise<{
+      entity: string;
+      count: number;
+      items: RazorpayTransfer[];
+    }>;
+    edit(
+      transferId: string,
+      params: { on_hold?: boolean | 0 | 1; on_hold_until?: number },
+    ): Promise<RazorpayTransfer>;
+    reverse(transferId: string, params?: { amount: number }): Promise<RazorpayReversal>;
   };
 };
 
@@ -245,3 +322,84 @@ export const serializeRazorpayPaymentListForOrder = (list: {
 
 export const serializeRazorpayRefundSingle = (refund: RazorpayRefund): RazorpayRefundResponse =>
   serializeRazorpayRefund(refund);
+
+// ─── Transfer serializers ───────────────────────────────────────────────────
+
+export const toRazorpayTransferInput = (
+  input: CreateRazorpayTransferItem,
+): RazorpayTransferCreateItem => {
+  const item: RazorpayTransferCreateItem = {
+    account: input.account,
+    amount: input.amount,
+    currency: input.currency,
+  };
+
+  if (input.notes !== undefined) {
+    item.notes = input.notes;
+  }
+
+  if (input.onHold !== undefined) {
+    item.on_hold = input.onHold;
+  }
+
+  if (input.onHoldUntil !== undefined) {
+    item.on_hold_until = input.onHoldUntil;
+  }
+
+  if (input.linkedAccountNotes !== undefined) {
+    item.linked_account_notes = input.linkedAccountNotes;
+  }
+
+  return item;
+};
+
+export const serializeRazorpayTransfer = (
+  transfer: RazorpayTransfer,
+): RazorpayTransferResponse => ({
+  id: transfer.id,
+  entity: transfer.entity,
+  amount: Number(transfer.amount),
+  currency: transfer.currency,
+  status: transfer.status,
+  settlementStatus: transfer.settlement_status ?? null,
+  source: transfer.source,
+  recipient: transfer.recipient,
+  amountReversed: transfer.amount_reversed,
+  fee: transfer.fees,
+  tax: transfer.tax,
+  recipientSettlementId: transfer.recipient_settlement_id ?? null,
+  createdAt: transfer.created_at,
+  processedAt: transfer.processed_at,
+  notes: transfer.notes ?? {},
+  error: transfer.error ?? null,
+});
+
+export const serializeRazorpayReversal = (
+  reversal: RazorpayReversal,
+): RazorpayReversalResponse => ({
+  id: reversal.id,
+  entity: reversal.entity,
+  transferId: reversal.transfer_id,
+  amount: reversal.amount,
+  fee: reversal.fee,
+  tax: reversal.tax,
+  currency: reversal.currency,
+  notes: reversal.notes ?? {},
+  initiatorId: reversal.initiator_id ?? null,
+  customerRefundId: reversal.customer_refund_id ?? null,
+  createdAt: reversal.created_at,
+});
+
+export const serializeRazorpayTransferList = (list: {
+  entity: string;
+  count: number;
+  items: RazorpayTransfer[];
+}): {
+  entity: string;
+  count: number;
+  items: RazorpayTransferResponse[];
+} => ({
+  entity: list.entity,
+  count: list.count,
+  items: list.items.map(serializeRazorpayTransfer),
+});

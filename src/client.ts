@@ -89,6 +89,11 @@ export const razorpayClient = <
       "/razorpay/item/list": "GET",
       "/razorpay/item/edit": "POST",
       "/razorpay/item/delete": "POST",
+      "/razorpay/transfer/create": "POST",
+      "/razorpay/transfer/get": "GET",
+      "/razorpay/transfer/list": "GET",
+      "/razorpay/transfer/edit": "POST",
+      "/razorpay/transfer/reverse": "POST",
     },
   } satisfies BetterAuthClientPlugin;
 };

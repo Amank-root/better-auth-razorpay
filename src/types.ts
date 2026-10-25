@@ -935,6 +935,97 @@ export type VerifyRazorpayPaymentResponse = {
     | undefined;
 };
 
+// ─── Transfer ─────────────────────────────────────────────────────────────────
+
+export type CreateRazorpayTransferItem = {
+  /** Unique identifier of the linked account to which the transfer must be made. */
+  account: string;
+  /** The amount (in paise) to be transferred. */
+  amount: number;
+  /** The currency used in the transaction. INR for Route transactions. */
+  currency: string;
+  /** Optional notes (max 15 key-value pairs). */
+  notes?: RazorpayNotes | undefined;
+  /** Put the transfer settlement on hold. */
+  onHold?: boolean | undefined;
+  /** Unix timestamp until which the transfer settlement is on hold. */
+  onHoldUntil?: number | undefined;
+  /** Notes to display on the linked account. */
+  linkedAccountNotes?: string[] | undefined;
+};
+
+export type CreateRazorpayTransferInput = {
+  /** The payment id from which transfers should be created. */
+  paymentId: string;
+  /** Array of transfers to create on the payment. */
+  transfers: CreateRazorpayTransferItem[];
+};
+
+export type GetRazorpayTransferQuery = {
+  id: string;
+};
+
+export type ListTransfersQuery = {
+  paymentId?: string | undefined;
+  limit?: number | undefined;
+  from?: number | undefined;
+  to?: number | undefined;
+};
+
+export type EditRazorpayTransferBody = {
+  transferId: string;
+  onHold?: boolean | undefined;
+  onHoldUntil?: number | undefined;
+};
+
+export type ReverseRazorpayTransferBody = {
+  transferId: string;
+  /** Amount to reverse in paise. If omitted, the full transfer amount is reversed. */
+  amount?: number | undefined;
+};
+
+export type RazorpayTransferResponse = {
+  id: string;
+  entity: string;
+  amount: number;
+  currency: string;
+  status: string;
+  settlementStatus: string | null;
+  source: string;
+  recipient: string;
+  amountReversed: number;
+  fee: number;
+  tax: number | null;
+  recipientSettlementId: string | null;
+  createdAt: number;
+  processedAt: number;
+  notes: RazorpayNotes;
+  error: {
+    code: string | null;
+    description: string | null;
+    reason: string | null;
+    field: string | null;
+    step: string | null;
+    id: string | null;
+    source: string | null;
+    metadata: string | null;
+  } | null;
+};
+
+export type RazorpayReversalResponse = {
+  id: string;
+  entity: string;
+  transferId: string;
+  amount: number;
+  fee: number | null;
+  tax: number | null;
+  currency: string;
+  notes: Record<string, unknown>;
+  initiatorId: string | null;
+  customerRefundId: string | null;
+  createdAt: number;
+};
+
 // ─── Pagination ─────────────────────────────────────────────────────────────
 
 export type RazorpayPaginationQuery = {

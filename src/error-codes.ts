@@ -108,4 +108,11 @@ export const RAZORPAY_ERROR_CODES = {
   ITEM_LIST_FAILED: "Failed to list items",
   ITEM_EDIT_FAILED: "Failed to edit item",
   ITEM_DELETE_FAILED: "Failed to delete item",
+
+  // Transfer errors
+  TRANSFER_CREATE_FAILED: "Failed to create transfer",
+  TRANSFER_FETCH_FAILED: "Failed to fetch transfer",
+  TRANSFER_LIST_FAILED: "Failed to list transfers",
+  TRANSFER_EDIT_FAILED: "Failed to edit transfer",
+  TRANSFER_REVERSE_FAILED: "Failed to reverse transfer",
 } as const;

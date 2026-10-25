@@ -106,6 +106,13 @@ type RazorpayAuthClient = {
       edit: (body: any) => Promise<any>;
       delete: (body: any) => Promise<any>;
     };
+    transfer: {
+      create: (body: any) => Promise<any>;
+      get: (query: any) => Promise<any>;
+      list: (query?: any) => Promise<any>;
+      edit: (body: any) => Promise<any>;
+      reverse: (body: any) => Promise<any>;
+    };
   };
 };
 
@@ -168,6 +175,9 @@ export const razorpayQueryKeys = {
     [...razorpayQueryKeys.customers(), "tokens", customerId] as const,
   bankAccounts: (customerId: string) =>
     [...razorpayQueryKeys.customers(), "bankAccounts", customerId] as const,
+  transfers: () => [...razorpayQueryKeys.all, "transfers"] as const,
+  transfer: (transferId: string) =>
+    [...razorpayQueryKeys.transfers(), "detail", transferId] as const,
 };
 
 // ─── Query Hooks ─────────────────────────────────────────────────────────────
@@ -1568,6 +1578,196 @@ export function useDeleteItem(
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: razorpayQueryKeys.items() });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+// ─── Transfer Hooks ───────────────────────────────────────────────────────────
+
+/**
+ * Create transfers (split payments) from a payment for marketplace use cases.
+ *
+ * @example
+ * ```tsx
+ * const create = useCreateTransfer(authClient);
+ * const { data } = await create.mutate({
+ *   paymentId: "pay_123",
+ *   transfers: [
+ *     { account: "acc_abc", amount: 10000, currency: "INR" },
+ *     { account: "acc_xyz", amount: 20000, currency: "INR" },
+ *   ],
+ * });
+ * ```
+ */
+export function useCreateTransfer(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<
+      UseMutationOptions<any, Error, any>,
+      "mutationFn"
+    >;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: any) => {
+      const { data, error } = await authClient.razorpay.transfer.create(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.transfers(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Fetch a single transfer by ID.
+ *
+ * @example
+ * ```tsx
+ * const { data: transfer } = useRazorpayTransfer(authClient, "trf_123");
+ * ```
+ */
+export function useRazorpayTransfer(
+  authClient: RazorpayAuthClient,
+  transferId: string,
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: razorpayQueryKeys.transfer(transferId),
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.transfer.get({
+        query: { id: transferId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!transferId,
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * List transfers, optionally filtered by payment.
+ *
+ * @example
+ * ```tsx
+ * const { data } = useRazorpayTransferList(authClient, { paymentId: "pay_123" });
+ * // or list all transfers
+ * const { data } = useRazorpayTransferList(authClient);
+ * ```
+ */
+export function useRazorpayTransferList(
+  authClient: RazorpayAuthClient,
+  query?: {
+    paymentId?: string;
+    limit?: number;
+    from?: number;
+    to?: number;
+  },
+  options?: {
+    queryOptions?: Omit<
+      UseQueryOptions<unknown, Error>,
+      "queryKey" | "queryFn"
+    >;
+  },
+) {
+  return useQuery<unknown, Error>({
+    queryKey: [...razorpayQueryKeys.transfers(), query],
+    queryFn: async () => {
+      const { data, error } = await authClient.razorpay.transfer.list({
+        query: { ...(query || {}) },
+      });
+      if (error) throw error;
+      return data;
+    },
+    ...options?.queryOptions,
+  });
+}
+
+/**
+ * Edit the settlement hold status of a transfer.
+ *
+ * @example
+ * ```tsx
+ * const edit = useEditTransfer(authClient);
+ * edit.mutate({ transferId: "trf_123", onHold: true });
+ * ```
+ */
+export function useEditTransfer(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<
+      UseMutationOptions<any, Error, any>,
+      "mutationFn"
+    >;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      transferId: string;
+      onHold?: boolean;
+      onHoldUntil?: number;
+    }) => {
+      const { data, error } = await authClient.razorpay.transfer.edit(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.transfers(),
+      });
+    },
+    ...options?.mutationOptions,
+  });
+}
+
+/**
+ * Reverse all or part of a transfer.
+ *
+ * @example
+ * ```tsx
+ * const reverse = useReverseTransfer(authClient);
+ * // Reverse full amount
+ * reverse.mutate({ transferId: "trf_123" });
+ * // Reverse partial amount
+ * reverse.mutate({ transferId: "trf_123", amount: 5000 });
+ * ```
+ */
+export function useReverseTransfer(
+  authClient: RazorpayAuthClient,
+  options?: {
+    mutationOptions?: Omit<
+      UseMutationOptions<any, Error, any>,
+      "mutationFn"
+    >;
+  },
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      transferId: string;
+      amount?: number;
+    }) => {
+      const { data, error } = await authClient.razorpay.transfer.reverse(body);
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: razorpayQueryKeys.transfers(),
+      });
     },
     ...options?.mutationOptions,
   });
