@@ -17,6 +17,7 @@ describe("toRazorpayOrderInput", () => {
           notes: { plan: "pro" },
           partialPayment: true,
           firstPaymentMinAmount: 10000,
+          paymentCapture: false,
         },
         "INR",
       ),
@@ -27,7 +28,13 @@ describe("toRazorpayOrderInput", () => {
       notes: { plan: "pro" },
       partial_payment: true,
       first_payment_min_amount: 10000,
+      payment_capture: false,
     });
+  });
+
+  it("omits payment_capture when paymentCapture is not provided", () => {
+    const result = toRazorpayOrderInput({ amount: 50000 }, "INR");
+    expect(result).not.toHaveProperty("payment_capture");
   });
 
   it("uses explicit currency over default currency", () => {

@@ -167,6 +167,7 @@ const createOrderBodySchema = z.object({
   notes: notesSchema.optional(),
   partialPayment: z.boolean().optional(),
   firstPaymentMinAmount: z.number().int().positive().optional(),
+  paymentCapture: z.boolean().optional(),
 }).superRefine((body, ctx) => {
   const currency = body.currency ?? "INR";
 

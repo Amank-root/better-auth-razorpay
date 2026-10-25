@@ -268,6 +268,33 @@ const order = await auth.api.razorpayCreateOrder({
 });
 ```
 
+**Create-order body parameters**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `amount` | `number` | *(required)* | Order amount in currency subunits (e.g. paise). |
+| `currency` | `string` | `"INR"` | 3-character ISO currency code. |
+| `receipt` | `string` | — | Alphanumeric receipt ID (max 40 chars). |
+| `notes` | `record` | — | Up to 15 key-value pairs (max 256 chars each). |
+| `partialPayment` | `boolean` | `false` | Allow partial payments on this order. |
+| `firstPaymentMinAmount` | `number` | — | Minimum amount for the first partial payment. |
+| `paymentCapture` | `boolean` | `true` | `true` = auto-capture (default). `false` = authorize only; capture later via `/razorpay/payment/capture`. Requires manual-capture mode in your Razorpay Dashboard. |
+
+**Example: Create an order with manual capture**
+
+```ts
+const order = await auth.api.razorpayCreateOrder({
+  body: {
+    amount: 50000,
+    currency: "INR",
+    receipt: "receipt_001",
+    notes: { order_id: "ORD_123" },
+    // Authorize now, capture later when the item ships
+    paymentCapture: false,
+  },
+});
+```
+
 **Example: Verify a payment**
 
 ```ts
