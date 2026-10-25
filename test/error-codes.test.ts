@@ -101,8 +101,8 @@ describe("RAZORPAY_ERROR_CODES", () => {
     }
   });
 
-  it("has 78 error codes", () => {
-    expect(Object.keys(RAZORPAY_ERROR_CODES).length).toBe(78);
+  it("has 82 error codes", () => {
+    expect(Object.keys(RAZORPAY_ERROR_CODES).length).toBe(82);
   });
 
   it("all error codes are non-empty strings", () => {

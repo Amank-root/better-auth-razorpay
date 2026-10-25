@@ -251,7 +251,7 @@ All endpoints are available under the Better Auth route handler (`/api/auth/*`).
 |--------|------------------------------|--------------------------------------------------|
 | `POST` | `/razorpay/create-order`     | Create a Razorpay order for one-time payment     |
 | `GET`  | `/razorpay/order`            | Fetch order details by ID                        |
-| `POST` | `/razorpay/verify-payment`   | Verify Razorpay payment signature                |
+| `POST` | `/razorpay/verify-payment`   | Verify payment signature and status with Razorpay      |
 | `POST` | `/razorpay/payment/capture`  | Capture an authorized payment                      |
 | `POST` | `/razorpay/payment/refund`   | Refund a payment                                  |
 
@@ -276,9 +276,43 @@ const result = await auth.api.razorpayVerifyPayment({
     razorpayOrderId: "order_123",
     razorpayPaymentId: "pay_123",
     razorpaySignature: "signature_from_client",
+    // optional: reject payments whose amount doesn't match
+    expectedAmount: 50000, // in subunits (paise); 50000 = ₹500
   },
 });
-// result => { valid: true }
+// result =>
+//   { valid: true, paymentStatus: "captured", amount: 50000, currency: "INR", orderId: "order_123" }
+//   on failure:
+//   { valid: false, paymentStatus: "failed", amount: 50000, reason: "payment_not_captured" }
+```
+
+> **Security:** The verify-payment endpoint now fetches the payment from
+> Razorpay and checks that the status is `"captured"`, the `order_id` matches,
+> and (if provided) the `amount` matches `expectedAmount`. A valid signature
+> alone is **not sufficient** to provision goods — a malicious user could
+> submit a valid signature for a failed payment. Only fulfill orders on the
+> `order.paid` webhook event.
+
+**Example: Verify with expected amount**
+
+```ts
+const result = await auth.api.razorpayVerifyPayment({
+  body: {
+    razorpayOrderId: "order_123",
+    razorpayPaymentId: "pay_123",
+    razorpaySignature: "signature_from_client",
+    expectedAmount: 50000,
+  },
+});
+
+if (result.valid) {
+  // Payment is verified AND captured — provision the goods
+  await provisionOrder(result.orderId);
+} else {
+  // Payment is not captured (e.g. failed, authorized-but-not-captured,
+  // amount mismatch, or order mismatch)
+  console.warn("Payment not valid:", result.reason);
+}
 ```
 
 ### Subscription Management
