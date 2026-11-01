@@ -92,6 +92,14 @@ describe("getPlans", () => {
       "Subscriptions are not enabled",
     );
   });
+
+  it("returns an empty array when enabled but no plans are configured", async () => {
+    // Guards against the "plan is undefined" trap: a missing `plans` (e.g. a
+    // `plan` typo, or omitting it) must normalize to `[]` so callers can safely
+    // iterate instead of crashing on `Cannot read properties of undefined`.
+    const plans = await getPlans({ enabled: true } as any);
+    expect(plans).toEqual([]);
+  });
 });
 
 // ─── getPlanByName ───────────────────────────────────────────────────────────

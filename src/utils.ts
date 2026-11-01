@@ -20,9 +20,15 @@ export async function getPlans(
   subscriptionOptions: RazorpayOptions["subscription"],
 ) {
   if (subscriptionOptions?.enabled) {
-    return typeof subscriptionOptions.plans === "function"
-      ? await subscriptionOptions.plans()
-      : subscriptionOptions.plans;
+    const plans =
+      typeof subscriptionOptions.plans === "function"
+        ? await subscriptionOptions.plans()
+        : subscriptionOptions.plans;
+    // Normalize a missing/empty plan list to `[]` so downstream callers can
+    // safely iterate (`plans.find(...)`, `plans.filter(...)`) without guarding
+    // against `undefined`. This also covers a misconfiguration such as a `plan`
+    // typo for `plans`, turning a runtime `TypeError` into a safe empty list.
+    return plans ?? [];
   }
   throw new Error("Subscriptions are not enabled in the Razorpay options.");
 }

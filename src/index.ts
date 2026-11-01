@@ -303,6 +303,12 @@ export const razorpay = <O extends RazorpayOptions>(options: O) => {
         updateSubscription: updateSubscription(resolvedOptions),
         restoreSubscription: restoreSubscription(resolvedOptions),
         getSubscription: getSubscription(resolvedOptions),
+        // Lists subscriptions directly from the Razorpay API. Like the other
+        // subscription endpoints it requires `subscription.enabled`, so it is
+        // grouped here (guarded) instead of in the unconditional
+        // `razorpaySpecificEndpoints` below — otherwise constructing the plugin
+        // for one-time-only stores would throw "Subscriptions must be enabled".
+        fetchAllSubscriptions: fetchAllSubscriptions(resolvedOptions),
       }
     : {};
 
@@ -351,7 +357,6 @@ export const razorpay = <O extends RazorpayOptions>(options: O) => {
     editOrder: editOrder(resolvedOptions),
     fetchPaymentsForOrder: fetchPaymentsForOrder(resolvedOptions),
     fetchAllOrders: fetchAllOrders(resolvedOptions),
-    fetchAllSubscriptions: fetchAllSubscriptions(resolvedOptions),
   };
 
   const oneTimePaymentEndpoints = {
